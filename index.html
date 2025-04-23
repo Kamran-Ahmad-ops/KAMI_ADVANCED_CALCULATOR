@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Advanced Calculator</title>
+  <style>
+    :root {
+      --primary: #2a2a72;
+      --secondary: #009ffd;
+      --accent: #00d4ff;
+      --text: #ffffff;
+      --background: #121212;
+      --surface: #1e1e1e;
+      --button: #2a2a72;
+      --button-hover: #3a3a92;
+      --button-active: #1a1a52;
+      --neon-glow: 0 0 5px rgba(0, 212, 255, 0.5), 0 0 20px rgba(0, 212, 255, 0.2);
+      --button-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --transition-speed: 0.3s;
+    }
+
+    [data-theme="light"] {
+      --primary: #4a6fa5;
+      --secondary: #166088;
+      --accent: #4fc3dc;
+      --text: #333333;
+      --background: #f5f5f5;
+      --surface: #ffffff;
+      --button: #4a6fa5;
+      --button-hover: #5a7fb5;
+      --button-active: #3a5f95;
+      --neon-glow: 0 0 5px rgba(79, 195, 220, 0.5), 0 0 20px rgba(79, 195, 220, 0.2);
+      --button-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .calculator-container {
+      width: 100%;
+      max-width: 400px;
+      background-color: var(--surface);
+      border-radius: 30px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .theme-toggle-container {
+      position: absolute;
+      top: 0;
+      right: 0;
+      z-index: 10;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .theme-toggle {
+      background: var(--accent);
+      border: none;
+      color: var(--background);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 10px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s ease, background-color 0.3s ease;
+      box-shadow: var(--button-shadow);
+      width: 30px;
+      height: 30px;
+    }
+
+    .theme-toggle:hover {
+      transform: rotate(30deg);
+      background-color: var(--secondary);
+    }
+
+    .hamburger-menu {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 10;
+      padding: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hamburger-button {
+      background: var(--accent);
+      border: none;
+      color: var(--background);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 10px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s ease, background-color 0.3s ease;
+      box-shadow: var(--button-shadow);
+      width: 30px;
+      height: 30px;
+    }
+
+    .hamburger-button:hover {
+      transform: scale(1.1);
+      background-color: var(--secondary);
+    }
+
+    .settings-panel {
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background-color: var(--surface);
+      z-index: 9;
+      padding: 60px 20px 20px;
+      transition: left 0.3s ease;
+      border-radius: 30px;
+      overflow-y: auto;
+    }
+
+    .settings-panel.active {
+      left: 0;
+    }
+
+    .settings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .settings-close {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .settings-section {
+      margin-bottom: 20px;
+    }
+
+    .settings-section h3 {
+      margin-bottom: 10px;
+      color: var(--accent);
+    }
+
+    .settings-option {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 10px;
+      background-color: rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+    }
+
+    .calculator-header {
+      padding: 20px 20px 10px;
+      margin-top: 30px;
+    }
+
+    .display {
+      width: 100%;
+      height: 80px;
+      background-color: rgba(0, 0, 0, 0.1);
+      border-radius: 20px;
+      margin-bottom: 20px;
+      padding: 10px 15px;
+      text-align: right;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+
+    .display .previous-operand {
+      font-size: 1.2rem;
+      opacity: 0.7;
+      height: 24px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .display .current-operand {
+      font-size: 2.5rem;
+      font-weight: 500;
+      height: 46px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 12px 0;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 500;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .tab.active {
+      color: var(--accent);
+    }
+
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background-color: var(--accent);
+      border-radius: 3px 3px 0 0;
+    }
+
+    .tab:hover:not(.active) {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .calculator-body {
+      padding: 20px;
+    }
+
+    .calculator-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 12px;
+      margin-top: 10px;
+    }
+
+    .scientific-grid {
+      grid-template-columns: repeat(5, 1fr);
+      grid-gap: 8px;
+    }
+
+    .programming-grid {
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 8px;
+    }
+
+    .bmi-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .bmi-inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .bmi-input-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bmi-input-group label {
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    .bmi-input-group input {
+      padding: 12px;
+      border-radius: 100px;
+      border: none;
+      background-color: rgba(0, 0, 0, 0.1);
+      color: var(--text);
+      font-size: 1rem;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .bmi-input-group select {
+      padding: 12px;
+      border-radius: 100px;
+      border: none;
+      background-color: rgba(0, 0, 0, 0.1);
+      color: var(--text);
+      font-size: 1rem;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .bmi-result {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 20px;
+      background-color: rgba(0, 0, 0, 0.1);
+      text-align: center;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .bmi-result h3 {
+      margin-bottom: 10px;
+    }
+
+    .bmi-category {
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    .btn {
+      padding: 15px 10px;
+      border: none;
+      border-radius: 200px;
+      background: linear-gradient(145deg, var(--button), var(--button-hover));
+      color: var(--text);
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: var(--button-shadow);
+      position: relative;
+      overflow: hidden;
+      transform-style: preserve-3d;
+      transform: perspective(1000px) translateZ(0);
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+      border-radius: 100px;
+      transform: translateZ(-1px);
+    }
+
+    .btn:hover {
+      transform: perspective(1000px) translateZ(10px);
+      box-shadow: var(--neon-glow);
+    }
+
+    .btn:active {
+      transform: perspective(1000px) translateZ(5px);
+      background: linear-gradient(145deg, var(--button-active), var(--button));
+    }
+
+    .btn.operator {
+      background: linear-gradient(145deg, var(--secondary), var(--primary));
+    }
+
+    .btn.function {
+      background: linear-gradient(145deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3));
+    }
+
+    .btn.equals {
+      background: linear-gradient(145deg, var(--accent), var(--secondary));
+      color: #000;
+      font-weight: bold;
+    }
+
+    .btn.span-2 {
+      grid-column: span 2;
+    }
+
+    .btn.span-3 {
+      grid-column: span 3;
+    }
+
+    .btn.span-4 {
+      grid-column: span 4;
+    }
+
+    .calculator-mode {
+      display: none;
+    }
+
+    .calculator-mode.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.2);
+      transition: .4s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: var(--text);
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--accent);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Responsive styles */
+    @media (max-width: 480px) {
+      .calculator-container {
+        max-width: 100%;
+      }
+
+      .btn {
+        padding: 12px 8px;
+        font-size: 1rem;
+      }
+
+      .scientific-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .display .current-operand {
+        font-size: 2rem;
+      }
+    }
+
+    /* Animations */
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(0, 212, 255, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(0, 212, 255, 0);
+      }
+    }
+
+    .btn.equals:hover {
+      animation: pulse 1.5s infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator-container">
+    <!-- Theme Toggle Button in dedicated space -->
+    <div class="theme-toggle-container">
+      <button class="theme-toggle" id="themeToggle">☀️</button>
+    </div>
+
+    <!-- Hamburger Menu Button -->
+    <div class="hamburger-menu">
+      <button class="hamburger-button" id="hamburgerButton">☰</button>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+      <div class="settings-header">
+        <h2>Settings</h2>
+        <button class="settings-close" id="settingsClose">×</button>
+      </div>
+
+      <!-- General Settings -->
+      <div class="settings-section">
+        <h3>General</h3>
+        <div class="settings-option">
+          <span>Sound Effects</span>
+          <label class="switch">
+            <input type="checkbox" id="soundToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="settings-option">
+          <span>Vibration</span>
+          <label class="switch">
+            <input type="checkbox" id="vibrationToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- BMI Settings -->
+      <div class="settings-section" id="bmiSettings">
+        <h3>BMI Calculator</h3>
+        <div class="settings-option">
+          <span>Default to Metric</span>
+          <label class="switch">
+            <input type="checkbox" id="metricToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="settings-option">
+          <span>Show Health Tips</span>
+          <label class="switch">
+            <input type="checkbox" id="healthTipsToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Scientific Calculator Settings -->
+      <div class="settings-section" id="scientificSettings">
+        <h3>Scientific Calculator</h3>
+        <div class="settings-option">
+          <span>Angle in Degrees</span>
+          <label class="switch">
+            <input type="checkbox" id="degreeToggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="settings-option">
+          <span>Scientific Notation</span>
+          <label class="switch">
+            <input type="checkbox" id="scientificNotationToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Programming Calculator Settings -->
+      <div class="settings-section" id="programmingSettings">
+        <h3>Programming Calculator</h3>
+        <div class="settings-option">
+          <span>Bit Length</span>
+          <select id="bitLengthSelect" class="settings-select">
+            <option value="8">8-bit</option>
+            <option value="16">16-bit</option>
+            <option value="32" selected>32-bit</option>
+            <option value="64">64-bit</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="calculator-header">
+      <div class="display">
+        <div class="previous-operand" id="previousOperand"></div>
+        <div class="current-operand" id="currentOperand">0</div>
+      </div>
+      <div class="tabs">
+        <div class="tab active" data-tab="standard">Standard</div>
+        <div class="tab" data-tab="scientific">Scientific</div>
+        <div class="tab" data-tab="bmi">BMI</div>
+        <div class="tab" data-tab="programming">Programming</div>
+      </div>
+    </div>
+    <div class="calculator-body">
+      <!-- Standard Calculator -->
+      <div class="calculator-mode active" id="standard-mode">
+        <div class="calculator-grid">
+          <button class="btn function" data-action="clear">AC</button>
+          <button class="btn function" data-action="delete">DEL</button>
+          <button class="btn function" data-action="percent">%</button>
+          <button class="btn operator" data-operation="÷">÷</button>
+          <button class="btn number" data-number="7">7</button>
+          <button class="btn number" data-number="8">8</button>
+          <button class="btn number" data-number="9">9</button>
+          <button class="btn operator" data-operation="×">×</button>
+          <button class="btn number" data-number="4">4</button>
+          <button class="btn number" data-number="5">5</button>
+          <button class="btn number" data-number="6">6</button>
+          <button class="btn operator" data-operation="-">-</button>
+          <button class="btn number" data-number="1">1</button>
+          <button class="btn number" data-number="2">2</button>
+          <button class="btn number" data-number="3">3</button>
+          <button class="btn operator" data-operation="+">+</button>
+          <button class="btn number span-2" data-number="0">0</button>
+          <button class="btn number" data-number=".">.</button>
+          <button class="btn equals" data-action="calculate">=</button>
+        </div>
+      </div>
+
+      <!-- Scientific Calculator -->
+      <div class="calculator-mode" id="scientific-mode">
+        <div class="calculator-grid scientific-grid">
+          <button class="btn function" data-action="clear">AC</button>
+          <button class="btn function" data-action="delete">DEL</button>
+          <button class="btn function" data-action="percent">%</button>
+          <button class="btn function" data-scientific="factorial">x!</button>
+          <button class="btn operator" data-operation="÷">÷</button>
+          
+          <button class="btn function" data-scientific="sin">sin</button>
+          <button class="btn function" data-scientific="cos">cos</button>
+          <button class="btn function" data-scientific="tan">tan</button>
+          <button class="btn function" data-scientific="pow">x^y</button>
+          <button class="btn operator" data-operation="×">×</button>
+          
+          <button class="btn function" data-scientific="log">log</button>
+          <button class="btn number" data-number="7">7</button>
+          <button class="btn number" data-number="8">8</button>
+          <button class="btn number" data-number="9">9</button>
+          <button class="btn operator" data-operation="-">-</button>
+          
+          <button class="btn function" data-scientific="ln">ln</button>
+          <button class="btn number" data-number="4">4</button>
+          <button class="btn number" data-number="5">5</button>
+          <button class="btn number" data-number="6">6</button>
+          <button class="btn operator" data-operation="+">+</button>
+          
+          <button class="btn function" data-scientific="sqrt">√</button>
+          <button class="btn number" data-number="1">1</button>
+          <button class="btn number" data-number="2">2</button>
+          <button class="btn number" data-number="3">3</button>
+          <button class="btn equals" data-action="calculate">=</button>
+          
+          <button class="btn function" data-scientific="pi">π</button>
+          <button class="btn function" data-scientific="e">e</button>
+          <button class="btn number" data-number="0">0</button>
+          <button class="btn number" data-number=".">.</button>
+          <button class="btn function" data-scientific="ans">ANS</button>
+        </div>
+      </div>
+
+      <!-- BMI Calculator -->
+      <div class="calculator-mode" id="bmi-mode">
+        <div class="bmi-grid">
+          <div class="bmi-inputs">
+            <div class="bmi-input-group">
+              <label for="height-unit">Height Unit</label>
+              <select id="height-unit">
+                <option value="cm">Centimeters (cm)</option>
+                <option value="in">Inches (in)</option>
+              </select>
+            </div>
+            <div class="bmi-input-group">
+              <label for="height">Height</label>
+              <input type="number" id="height" placeholder="Enter height">
+            </div>
+            <div class="bmi-input-group">
+              <label for="weight-unit">Weight Unit</label>
+              <select id="weight-unit">
+                <option value="kg">Kilograms (kg)</option>
+                <option value="lb">Pounds (lb)</option>
+              </select>
+            </div>
+            <div class="bmi-input-group">
+              <label for="weight">Weight</label>
+              <input type="number" id="weight" placeholder="Enter weight">
+            </div>
+          </div>
+          <button class="btn equals" id="calculate-bmi">Calculate BMI</button>
+          <div class="bmi-result" id="bmi-result">
+            <h3>Your BMI</h3>
+            <div id="bmi-value">--</div>
+            <div id="bmi-category" class="bmi-category">--</div>
+            <div id="health-tips" style="display: none; margin-top: 10px; font-size: 0.9rem;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Programming Calculator -->
+      <div class="calculator-mode" id="programming-mode">
+        <div class="calculator-grid programming-grid">
+          <div class="btn-group" style="grid-column: span 4; display: flex; gap: 8px; margin-bottom: 8px;">
+            <button class="btn function active" data-base="hex" style="flex: 1;">HEX</button>
+            <button class="btn function" data-base="dec" style="flex: 1;">DEC</button>
+            <button class="btn function" data-base="oct" style="flex: 1;">OCT</button>
+            <button class="btn function" data-base="bin" style="flex: 1;">BIN</button>
+          </div>
+          
+          <button class="btn function" data-action="clear">AC</button>
+          <button class="btn function" data-action="delete">DEL</button>
+          <button class="btn function" data-bitwise="not">NOT</button>
+          <button class="btn function" data-bitwise="and">AND</button>
+          
+          <button class="btn function hex-only" data-number="A">A</button>
+          <button class="btn function hex-only" data-number="B">B</button>
+          <button class="btn function hex-only" data-number="C">C</button>
+          <button class="btn function" data-bitwise="or">OR</button>
+          
+          <button class="btn function hex-only" data-number="D">D</button>
+          <button class="btn function hex-only" data-number="E">E</button>
+          <button class="btn function hex-only" data-number="F">F</button>
+          <button class="btn function" data-bitwise="xor">XOR</button>
+          
+          <button class="btn number" data-number="7">7</button>
+          <button class="btn number" data-number="8">8</button>
+          <button class="btn number" data-number="9">9</button>
+          <button class="btn function" data-bitwise="lsh">LSH</button>
+          
+          <button class="btn number" data-number="4">4</button>
+          <button class="btn number" data-number="5">5</button>
+          <button class="btn number" data-number="6">6</button>
+          <button class="btn function" data-bitwise="rsh">RSH</button>
+          
+          <button class="btn number" data-number="1">1</button>
+          <button class="btn number" data-number="2">2</button>
+          <button class="btn number" data-number="3">3</button>
+          <button class="btn function" data-action="convert">CONV</button>
+          
+          <button class="btn number span-2" data-number="0">0</button>
+          <button class="btn number bin-only" data-number="1">1</button>
+          <button class="btn equals" data-action="calculate">=</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Theme Toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+    let isDarkMode = true;
+
+    themeToggle.addEventListener('click', () => {
+      isDarkMode = !isDarkMode;
+      if (isDarkMode) {
+        body.removeAttribute('data-theme');
+        themeToggle.textContent = '☀️';
+      } else {
+        body.setAttribute('data-theme', 'light');
+        themeToggle.textContent = '🌙';
+      }
+    });
+
+    // Hamburger Menu
+    const hamburgerButton = document.getElementById('hamburgerButton');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const settingsClose = document.getElementById('settingsClose');
+
+    hamburgerButton.addEventListener('click', () => {
+      settingsPanel.classList.add('active');
+    });
+
+    settingsClose.addEventListener('click', () => {
+      settingsPanel.classList.remove('active');
+    });
+
+    // Show/hide settings sections based on active calculator mode
+    function updateSettingsSections() {
+      const activeTab = document.querySelector('.tab.active').getAttribute('data-tab');
+      
+      document.getElementById('bmiSettings').style.display = 
+        activeTab === 'bmi' ? 'block' : 'none';
+      
+      document.getElementById('scientificSettings').style.display = 
+        activeTab === 'scientific' ? 'block' : 'none';
+      
+      document.getElementById('programmingSettings').style.display = 
+        activeTab === 'programming' ? 'block' : 'none';
+    }
+
+    // BMI Settings
+    const metricToggle = document.getElementById('metricToggle');
+    const healthTipsToggle = document.getElementById('healthTipsToggle');
+    const healthTips = document.getElementById('health-tips');
+
+    metricToggle.addEventListener('change', () => {
+      const heightUnit = document.getElementById('height-unit');
+      const weightUnit = document.getElementById('weight-unit');
+      
+      if (metricToggle.checked) {
+        heightUnit.value = 'cm';
+        weightUnit.value = 'kg';
+      } else {
+        heightUnit.value = 'in';
+        weightUnit.value = 'lb';
+      }
+    });
+
+    healthTipsToggle.addEventListener('change', () => {
+      if (healthTipsToggle.checked) {
+        healthTips.style.display = 'block';
+      } else {
+        healthTips.style.display = 'none';
+      }
+    });
+
+    // Scientific Calculator Settings
+    const degreeToggle = document.getElementById('degreeToggle');
+    let useRadians = !degreeToggle.checked;
+
+    degreeToggle.addEventListener('change', () => {
+      useRadians = !degreeToggle.checked;
+    });
+
+    // Tab Switching
+    const tabs = document.querySelectorAll('.tab');
+    const calculatorModes = document.querySelectorAll('.calculator-mode');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.getAttribute('data-tab');
+        
+        // Update active tab
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Show corresponding calculator mode
+        calculatorModes.forEach(mode => {
+          mode.classList.remove('active');
+          if (mode.id === `${tabName}-mode`) {
+            mode.classList.add('active');
+          }
+        });
+        
+        // Update settings panel sections
+        updateSettingsSections();
+        
+        // Reset display when switching modes
+        resetCalculator();
+      });
+    });
+
+    // Standard Calculator Logic
+    class Calculator {
+      constructor(previousOperandElement, currentOperandElement) {
+        this.previousOperandElement = previousOperandElement;
+        this.currentOperandElement = currentOperandElement;
+        this.clear();
+        this.lastAnswer = 0;
+      }
+
+      clear() {
+        this.currentOperand = '0';
+        this.previousOperand = '';
+        this.operation = undefined;
+      }
+
+      delete() {
+        if (this.currentOperand === '0') return;
+        if (this.currentOperand.length === 1) {
+          this.currentOperand = '0';
+        } else {
+          this.currentOperand = this.currentOperand.toString().slice(0, -1);
+        }
+      }
+
+      appendNumber(number) {
+        if (number === '.' && this.currentOperand.includes('.')) return;
+        if (this.currentOperand === '0' && number !== '.') {
+          this.currentOperand = number.toString();
+        } else {
+          this.currentOperand = this.currentOperand.toString() + number.toString();
+        }
+      }
+
+      chooseOperation(operation) {
+        if (this.currentOperand === '') return;
+        if (this.previousOperand !== '') {
+          this.calculate();
+        }
+        this.operation = operation;
+        this.previousOperand = this.currentOperand;
+        this.currentOperand = '0';
+      }
+
+      calculate() {
+        let computation;
+        const prev = parseFloat(this.previousOperand);
+        const current = parseFloat(this.currentOperand);
+        if (isNaN(prev) || isNaN(current)) return;
+        switch (this.operation) {
+          case '+':
+            computation = prev + current;
+            break;
+          case '-':
+            computation = prev - current;
+            break;
+          case '×':
+            computation = prev * current;
+            break;
+          case '÷':
+            computation = prev / current;
+            break;
+          default:
+            return;
+        }
+        this.lastAnswer = computation;
+        this.currentOperand = computation.toString();
+        this.operation = undefined;
+        this.previousOperand = '';
+      }
+
+      percent() {
+        this.currentOperand = (parseFloat(this.currentOperand) / 100).toString();
+      }
+
+      // Scientific calculator functions
+      sin() {
+        const value = parseFloat(this.currentOperand);
+        this.currentOperand = useRadians 
+          ? Math.sin(value).toString() 
+          : Math.sin(value * (Math.PI / 180)).toString();
+      }
+
+      cos() {
+        const value = parseFloat(this.currentOperand);
+        this.currentOperand = useRadians 
+          ? Math.cos(value).toString() 
+          : Math.cos(value * (Math.PI / 180)).toString();
+      }
+
+      tan() {
+        const value = parseFloat(this.currentOperand);
+        this.currentOperand = useRadians 
+          ? Math.tan(value).toString() 
+          : Math.tan(value * (Math.PI / 180)).toString();
+      }
+
+      log() {
+        this.currentOperand = Math.log10(parseFloat(this.currentOperand)).toString();
+      }
+
+      ln() {
+        this.currentOperand = Math.log(parseFloat(this.currentOperand)).toString();
+      }
+
+      sqrt() {
+        this.currentOperand = Math.sqrt(parseFloat(this.currentOperand)).toString();
+      }
+
+      factorial() {
+        const n = parseInt(this.currentOperand);
+        if (n < 0) {
+          this.currentOperand = 'Error';
+          return;
+        }
+        let result = 1;
+        for (let i = 2; i <= n; i++) {
+          result *= i;
+        }
+        this.currentOperand = result.toString();
+      }
+
+      power() {
+        this.operation = 'pow';
+        this.previousOperand = this.currentOperand;
+        this.currentOperand = '0';
+      }
+
+      calculatePower() {
+        const base = parseFloat(this.previousOperand);
+        const exponent = parseFloat(this.currentOperand);
+        this.currentOperand = Math.pow(base, exponent).toString();
+        this.previousOperand = '';
+        this.operation = undefined;
+      }
+
+      pi() {
+        this.currentOperand = Math.PI.toString();
+      }
+
+      e() {
+        this.currentOperand = Math.E.toString();
+      }
+
+      ans() {
+        this.currentOperand = this.lastAnswer.toString();
+      }
+
+      updateDisplay() {
+        this.currentOperandElement.innerText = this.currentOperand;
+        if (this.operation != null) {
+          this.previousOperandElement.innerText = `${this.previousOperand} ${this.operation}`;
+        } else {
+          this.previousOperandElement.innerText = this.previousOperand;
+        }
+      }
+    }
+
+    const previousOperandElement = document.getElementById('previousOperand');
+    const currentOperandElement = document.getElementById('currentOperand');
+    const calculator = new Calculator(previousOperandElement, currentOperandElement);
+
+    // Standard Calculator Event Listeners
+    document.querySelectorAll('.number').forEach(button => {
+      button.addEventListener('click', () => {
+        calculator.appendNumber(button.getAttribute('data-number'));
+        calculator.updateDisplay();
+      });
+    });
+
+    document.querySelectorAll('.operator').forEach(button => {
+      button.addEventListener('click', () => {
+        calculator.chooseOperation(button.getAttribute('data-operation'));
+        calculator.updateDisplay();
+      });
+    });
+
+    document.querySelectorAll('[data-action="calculate"]').forEach(button => {
+      button.addEventListener('click', () => {
+        if (calculator.operation === 'pow') {
+          calculator.calculatePower();
+        } else {
+          calculator.calculate();
+        }
+        calculator.updateDisplay();
+      });
+    });
+
+    document.querySelectorAll('[data-action="clear"]').forEach(button => {
+      button.addEventListener('click', () => {
+        calculator.clear();
+        calculator.updateDisplay();
+      });
+    });
+
+    document.querySelectorAll('[data-action="delete"]').forEach(button => {
+      button.addEventListener('click', () => {
+        calculator.delete();
+        calculator.updateDisplay();
+      });
+    });
+
+    document.querySelectorAll('[data-action="percent"]').forEach(button => {
+      button.addEventListener('click', () => {
+        calculator.percent();
+        calculator.updateDisplay();
+      });
+    });
+
+    // Scientific Calculator Event Listeners
+    document.querySelectorAll('[data-scientific]').forEach(button => {
+      button.addEventListener('click', () => {
+        const action = button.getAttribute('data-scientific');
+        switch (action) {
+          case 'sin':
+            calculator.sin();
+            break;
+          case 'cos':
+            calculator.cos();
+            break;
+          case 'tan':
+            calculator.tan();
+            break;
+          case 'log':
+            calculator.log();
+            break;
+          case 'ln':
+            calculator.ln();
+            break;
+          case 'sqrt':
+            calculator.sqrt();
+            break;
+          case 'factorial':
+            calculator.factorial();
+            break;
+          case 'pow':
+            calculator.power();
+            break;
+          case 'pi':
+            calculator.pi();
+            break;
+          case 'e':
+            calculator.e();
+            break;
+          case 'ans':
+            calculator.ans();
+            break;
+        }
+        calculator.updateDisplay();
+      });
+    });
+
+    // BMI Calculator Logic
+    const heightInput = document.getElementById('height');
+    const weightInput = document.getElementById('weight');
+    const heightUnitSelect = document.getElementById('height-unit');
+    const weightUnitSelect = document.getElementById('weight-unit');
+    const calculateBmiButton = document.getElementById('calculate-bmi');
+    const bmiValueElement = document.getElementById('bmi-value');
+    const bmiCategoryElement = document.getElementById('bmi-category');
+
+    calculateBmiButton.addEventListener('click', () => {
+      const height = parseFloat(heightInput.value);
+      const weight = parseFloat(weightInput.value);
+      const heightUnit = heightUnitSelect.value;
+      const weightUnit = weightUnitSelect.value;
+      
+      if (isNaN(height) || isNaN(weight) || height <= 0 || weight <= 0) {
+        bmiValueElement.textContent = 'Invalid input';
+        bmiCategoryElement.textContent = 'Please enter valid values';
+        return;
+      }
+      
+      // Convert to metric units for calculation
+      let heightInMeters;
+      if (heightUnit === 'cm') {
+        heightInMeters = height / 100;
+      } else { // inches
+        heightInMeters = height * 0.0254;
+      }
+      
+      let weightInKg;
+      if (weightUnit === 'kg') {
+        weightInKg = weight;
+      } else { // pounds
+        weightInKg = weight * 0.453592;
+      }
+      
+      // Calculate BMI
+      const bmi = weightInKg / (heightInMeters * heightInMeters);
+      bmiValueElement.textContent = bmi.toFixed(1);
+      
+      // Determine BMI category
+      let category;
+      let tips = '';
+      if (bmi < 18.5) {
+        category = 'Underweight';
+        bmiCategoryElement.style.color = '#3498db';
+        tips = 'Consider increasing calorie intake with nutrient-rich foods.';
+      } else if (bmi < 25) {
+        category = 'Normal weight';
+        bmiCategoryElement.style.color = '#2ecc71';
+        tips = 'Maintain a balanced diet and regular exercise routine.';
+      } else if (bmi < 30) {
+        category = 'Overweight';
+        bmiCategoryElement.style.color = '#f39c12';
+        tips = 'Focus on portion control and increasing physical activity.';
+      } else {
+        category = 'Obesity';
+        bmiCategoryElement.style.color = '#e74c3c';
+        tips = 'Consider consulting a healthcare professional for a personalized plan.';
+      }
+      
+      bmiCategoryElement.textContent = category;
+      
+      // Show health tips if enabled
+      if (healthTipsToggle.checked) {
+        healthTips.textContent = tips;
+        healthTips.style.display = 'block';
+      }
+    });
+
+    // Programming Calculator Logic
+    let currentBase = 'hex';
+    const baseButtons = document.querySelectorAll('[data-base]');
+    const bitLengthSelect = document.getElementById('bitLengthSelect');
+    
+    // Set initial state for programming calculator
+    updateProgrammingButtons('hex');
+    
+    baseButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const base = button.getAttribute('data-base');
+        currentBase = base;
+        
+        // Update active base button
+        baseButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Update available buttons based on selected base
+        updateProgrammingButtons(base);
+        
+        // Convert current value to the new base
+        convertToBase(calculator.currentOperand, base);
+      });
+    });
+    
+    function updateProgrammingButtons(base) {
+      const hexButtons = document.querySelectorAll('.hex-only');
+      const binButtons = document.querySelectorAll('.bin-only');
+      const decButtons = document.querySelectorAll('.number');
+      
+      // Reset all buttons
+      hexButtons.forEach(btn => btn.disabled = true);
+      
+      // Enable/disable buttons based on selected base
+      if (base === 'bin') {
+        decButtons.forEach(btn => {
+          const num = btn.getAttribute('data-number');
+          if (num && parseInt(num) > 1) {
+            btn.disabled = true;
+          } else {
+            btn.disabled = false;
+          }
+        });
+      } else if (base === 'oct') {
+        decButtons.forEach(btn => {
+          const num = btn.getAttribute('data-number');
+          if (num && parseInt(num) > 7) {
+            btn.disabled = true;
+          } else {
+            btn.disabled = false;
+          }
+        });
+      } else if (base === 'dec') {
+        decButtons.forEach(btn => btn.disabled = false);
+      } else if (base === 'hex') {
+        decButtons.forEach(btn => btn.disabled = false);
+        hexButtons.forEach(btn => btn.disabled = false);
+      }
+    }
+    
+    function convertToBase(value, targetBase) {
+      let decimalValue;
+      
+      // First convert to decimal
+      if (currentBase === 'bin') {
+        decimalValue = parseInt(value, 2);
+      } else if (currentBase === 'oct') {
+        decimalValue = parseInt(value, 8);
+      } else if (currentBase === 'dec') {
+        decimalValue = parseInt(value, 10);
+      } else if (currentBase === 'hex') {
+        decimalValue = parseInt(value, 16);
+      }
+      
+      // Then convert to target base
+      if (isNaN(decimalValue)) {
+        calculator.currentOperand = '0';
+      } else {
+        if (targetBase === 'bin') {
+          calculator.currentOperand = decimalValue.toString(2);
+        } else if (targetBase === 'oct') {
+          calculator.currentOperand = decimalValue.toString(8);
+        } else if (targetBase === 'dec') {
+          calculator.currentOperand = decimalValue.toString(10);
+        } else if (targetBase === 'hex') {
+          calculator.currentOperand = decimalValue.toString(16).toUpperCase();
+        }
+      }
+      
+      calculator.updateDisplay();
+    }
+    
+    // Bitwise operations
+    document.querySelectorAll('[data-bitwise]').forEach(button => {
+      button.addEventListener('click', () => {
+        const operation = button.getAttribute('data-bitwise');
+        const bitLength = parseInt(bitLengthSelect.value);
+        
+        if (operation === 'not') {
+          // Convert to decimal, perform NOT, then convert back
+          let decimalValue;
+          if (currentBase === 'bin') {
+            decimalValue = parseInt(calculator.currentOperand, 2);
+          } else if (currentBase === 'oct') {
+            decimalValue = parseInt(calculator.currentOperand, 8);
+          } else if (currentBase === 'dec') {
+            decimalValue = parseInt(calculator.currentOperand, 10);
+          } else if (currentBase === 'hex') {
+            decimalValue = parseInt(calculator.currentOperand, 16);
+          }
+          
+          if (!isNaN(decimalValue)) {
+            // Apply bit mask based on selected bit length
+            const mask = (1 << bitLength) - 1;
+            const result = (~decimalValue) & mask;
+            
+            if (currentBase === 'bin') {
+              calculator.currentOperand = result.toString(2);
+            } else if (currentBase === 'oct') {
+              calculator.currentOperand = result.toString(8);
+            } else if (currentBase === 'dec') {
+              calculator.currentOperand = result.toString(10);
+            } else if (currentBase === 'hex') {
+              calculator.currentOperand = result.toString(16).toUpperCase();
+            }
+            
+            calculator.updateDisplay();
+          }
+        } else {
+          // For AND, OR, XOR, LSH, RSH operations
+          calculator.operation = operation;
+          calculator.previousOperand = calculator.currentOperand;
+          calculator.currentOperand = '0';
+          calculator.updateDisplay();
+        }
+      });
+    });
+    
+    document.querySelector('[data-action="convert"]').addEventListener('click', () => {
+      // This button just converts the current number to the selected base
+      // which is already handled by the base selection
+      convertToBase(calculator.currentOperand, currentBase);
+    });
+    
+    // Helper function to reset calculator
+    function resetCalculator() {
+      calculator.clear();
+      calculator.updateDisplay();
+    }
+
+    // Initialize settings panel sections
+    updateSettingsSections();
+  </script>
+</body>
+</html>
