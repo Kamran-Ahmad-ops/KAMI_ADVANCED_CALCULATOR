@@ -22,5 +22,5 @@ An advanced, extensible calculator application built to handle basic arithmetic,
 Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/
+git clone https://github.com/Kamran-Ahmad-ops/KAMI_ADVANCED_CALCULATOR.git
 cd advanced-calculator
